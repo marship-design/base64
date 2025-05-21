@@ -60,10 +60,42 @@ char* base64(const char* str){
 	return res;
 }
 
+int check_padding(const char* str){
+
+	int padding = -1;
+	int len = strlen(str);
+
+	if( *(str+len) == '=') padding = 2;
+	if(padding == 2 && *(str+len-1) == '=') padding = 1;
+
+	for(int i = 0; i < len; i++){
+		if(table[i] == *(str + len)){
+			padding = 0;
+			break;
+		}else{
+			padding = -1;
+		}
+	}
+	return padding;
+}
+
+char* base64_decode(const char* str){
+	char* res = NULL;
+
+	int len = strlen(str);
+	res = malloc(len);
+	
+	int padding = check_padding(str);
+	if(padding == -1) exit(1);
+
+
+
+	return res;
+}
 
 int main(){
 
-	const char* txt = "fooba";
+	const char* txt = "foobar";
 
 	int len = strlen(txt);
 	char* res = base64(txt);
@@ -72,7 +104,7 @@ int main(){
 
 	printf("String %s encoded using base64 is %s\n", txt, res);
 
-	printf("size of %d\n", sizeof(table));
+	printf("String %s decoded using base64 is %s\n", res, base64_decode(res));
 
 	free(res);
 
