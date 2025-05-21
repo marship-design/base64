@@ -14,27 +14,56 @@ char* base64(const char* str){
 	int len = strlen(str);
 	res = malloc(len * 2);
 	slot_t* slot = (slot_t*)str;
-	printf("chunk to %d\n", slot[0]);
 	
-	for(int i = 0; i < (len / 3); i++){
-		res[0 + i*4] =table[ ((*slot->chunk) & 0x0000FC) >> 0]; 	
-		res[1 + i*4] =table[ ((*slot->chunk) & 0x000FC0) >> 6]; 	
+	int tripples = len / 3;
+	int rest = len % 3;
+
+	int idx;
+	for(idx = 0; idx < tripples; idx++){
+
+		res[0 + idx * 4] = table[ (slot->chunk[0] >> 2) ]; 	
+
+		char f = (slot->chunk[0] & 0x03) << 4;
+		char s = (slot->chunk[1] >> 4);
+		res[1 + idx*4] =table[ f | s ]; 	
 	
-//		printf("res0 =table[ %c\n", res[0]);
-		res[2 + i*4] =table[ ((*slot->chunk) & 0x03F000) >> 12]; 	
-		res[3 + i*4] =table[ ((*slot->chunk) & 0xFC0000) >> 18]; 	
+		f = (slot->chunk[1] & 0x0F) << 2;
+		s = (slot->chunk[2] >> 6);
+		res[2 + idx*4] =table[ f | s ]; 	
+
+		res[3 + idx*4] =table[ slot->chunk[2] & 0x3F ]; 	
 
 		slot++;
 	}
+	if(rest == 1){
+		int offset = (tripples * 3);
 
-	res[len+5] = '\0';
+		res[offset + 1] = table[*(str+offset) >> 2];
+		res[offset + 2] = table[(*(str+offset) & 0x03) << 4];
+		res[offset + 3] = '=';
+		res[offset + 4] = '=';
+		res[offset + 5] = '\0';
+	}
+		
+	if(rest == 2){
+		int offset = (tripples * 3);
+		res[offset + 1] = table[*(str+offset) >> 2];
 
+		char f = (*(str+offset) & 0x03) << 4;
+		char s = *(str+offset+1) >> 4;
+		res[offset + 2] = table[f | s];
+
+		res[offset + 3] = table[(*(str+offset+1) & 0x0F) << 2];
+		res[offset + 4] = '=';
+		res[offset + 5] = '\0';
+	}
 	return res;
 }
 
+
 int main(){
 
-	const char* txt = "foobar";
+	const char* txt = "fooba";
 
 	int len = strlen(txt);
 	char* res = base64(txt);
@@ -44,6 +73,8 @@ int main(){
 	printf("String %s encoded using base64 is %s\n", txt, res);
 
 	printf("size of %d\n", sizeof(table));
+
+	free(res);
 
 	return 0;
 }
