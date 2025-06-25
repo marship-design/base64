@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char table[] = {'A', 'B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/',};
+#define BASE_64_ALPHABETH		64
+
+const char table[BASE_64_ALPHABETH] = {'A', 'B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/',};
 
 typedef struct{
 	char chunk[3];
@@ -60,22 +62,24 @@ char* base64(const char* str){
 	return res;
 }
 
+int get_index(const char* value){
+	int idx;
+
+	for(idx = 0; idx < BASE_64_ALPHABETH - 1; idx++){
+		if(table[idx] == *value) break;
+	}
+
+	return idx;
+}
+
 int check_padding(const char* str){
 
-	int padding = -1;
+	int padding = 0;
 	int len = strlen(str);
 
-	if( *(str+len) == '=') padding = 2;
-	if(padding == 2 && *(str+len-1) == '=') padding = 1;
+	if( *(str+len) == '=') padding = 1;	// one '=' at the end
+	if(padding == 1 && *(str+len-1) == '=') padding = 2; // two '=' at the end
 
-	for(int i = 0; i < len; i++){
-		if(table[i] == *(str + len)){
-			padding = 0;
-			break;
-		}else{
-			padding = -1;
-		}
-	}
 	return padding;
 }
 
@@ -86,9 +90,23 @@ char* base64_decode(const char* str){
 	res = malloc(len);
 	
 	int padding = check_padding(str);
-	if(padding == -1) exit(1);
 
+	int i;
+	if(padding == 0){
+		int fours = len / 4;
+		for(i = 0; i < fours; i++){
+			char first =  get_index(str + i*4 + 0);
+			char second = get_index(str + i*4 + 1);
+			char third =  get_index(str + i*4 + 2);
+			char fourth = get_index(str + i*4 + 3);
 
+			res[0 + i*3] = (first << 2) | ( (second & 0x30) >> 4);
+			res[1 + i*3] = (second << 4) | (third >> 2);
+			res[2 + i*3] = ( (third & 0x03) << 6) | (fourth);
+		}
+	}
+	
+	res[3 + i*3] = '\0';
 
 	return res;
 }
